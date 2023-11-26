@@ -23,13 +23,16 @@ class Game:
         self.level = 0
         self.clock = pygame.time.Clock()
         self.speed = 30
+        self.rotation = 0
+        self.rotationCounter = 15
+        self.movingCounter = 2
 
         self.game = [[None for j in range(10)] for i in range(20)]
 
         self.blockPossibilities = [
+            BlockLMiror(912, 60, "red"),
             BlockL(912, 60, "darkBlue"),
             BlockO(912, 60, "yellow"),
-            BlockLMiror(912, 60, "red"),
             BlockI(912, 60, "green"),
             BlockS(912, 60, "purple"),
             BlockZ(912, 60, "orange"),
@@ -43,9 +46,9 @@ class Game:
         self.nextBlock = []
         for i in range(3):
             self.blockPossibilities = [
+                BlockLMiror(912, 60, "red"),
                 BlockL(912, 60, "darkBlue"),
                 BlockO(912, 60, "yellow"),
-                BlockLMiror(912, 60, "red"),
                 BlockI(912, 60, "green"),
                 BlockS(912, 60, "purple"),
                 BlockZ(912, 60, "orange"),
@@ -55,9 +58,9 @@ class Game:
 
     def createBlock(self):
         self.blockPossibilities = [
+            BlockLMiror(912, 60, "red"),
             BlockL(912, 60, "darkBlue"),
             BlockO(912, 60, "yellow"),
-            BlockLMiror(912, 60, "red"),
             BlockI(912, 60, "green"),
             BlockS(912, 60, "purple"),
             BlockZ(912, 60, "orange"),
@@ -69,7 +72,6 @@ class Game:
             self.nextBlock[2],
             random.choice(self.blockPossibilities),
         )
-        print(self.nextBlock)
         self.blockOnScreen = True
         self.speed = self.clock.get_fps()
 
@@ -78,45 +80,152 @@ class Game:
         canLeft = True
         canRight = True
 
-        if keys[pygame.K_LEFT]:
-            for i in self.block.blocks:
-                for j in i:
-                    if j != None and j.rect.x > 720 and canLeft:
-                        if (
-                            self.game[(j.rect.y // 48) - 1][(j.rect.x // 48) - 15 - 1]
-                            != None
-                        ):
-                            canLeft = False
-                    elif j != None:
-                        canLeft = False
-            if canLeft:
-                for i in self.block.blocks:
-                    for j in i:
-                        if j != None:
-                            j.rect.x -= 48
+        canTurnLeft = True
+        canTurnRight = True
 
-        if keys[pygame.K_RIGHT]:
-            for i in self.block.blocks:
-                for j in i:
-                    if j != None and j.rect.x < 1152 and canRight:
-                        if (
-                            self.game[(j.rect.y // 48) - 1][(j.rect.x // 48) - 15 + 1]
-                            != None
-                        ):
-                            canRight = False
-                    elif j != None:
-                        canRight = False
-            if canRight:
-                for i in self.block.blocks:
+        canGoDown = True
+
+        if self.movingCounter <= 0 and (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
+            self.movingCounter = 0
+            if keys[pygame.K_LEFT]:
+                for i in self.block.allBlocks[self.rotation % 4]:
                     for j in i:
-                        if j != None:
-                            j.rect.x += 48
+                        if j != None and j.rect.x > 720 and canLeft:
+                            if (
+                                self.game[(j.rect.y // 48) - 1][
+                                    (j.rect.x // 48) - 15 - 1
+                                ]
+                                != None
+                            ):
+                                canLeft = False
+                                self.movingCounter = 0
+                        elif j != None:
+                            canLeft = False
+                            self.movingCounter = 0
+                if canLeft:
+                    for k in self.block.allBlocks:
+                        for i in k:
+                            for j in i:
+                                if j != None:
+                                    j.rect.x -= 48
+
+            if keys[pygame.K_RIGHT]:
+                for i in self.block.allBlocks[self.rotation % 4]:
+                    for j in i:
+                        if j != None and j.rect.x < 1152 and canRight:
+                            if (
+                                self.game[(j.rect.y // 48) - 1][
+                                    (j.rect.x // 48) - 15 + 1
+                                ]
+                                != None
+                            ):
+                                canRight = False
+                                self.movingCounter = 0
+                        elif j != None:
+                            canRight = False
+                            self.movingCounter = 0
+                if canRight:
+                    for k in self.block.allBlocks:
+                        for i in k:
+                            for j in i:
+                                if j != None:
+                                    j.rect.x += 48
 
         if keys[pygame.K_DOWN]:
-            self.speed -= 48
+            for i in self.block.allBlocks[self.rotation % 4][-1]:
+                if i != None and i.rect.y < 972:
+                    if self.game[(i.rect.y // 48)][(i.rect.x // 48) - 15] != None:
+                        canGoDown = False
+                        break
+                elif i != None:
+                    canGoDown = False
+                    break
+            if canGoDown:
+                self.speed -= 50
 
         # if keys[pygame.K_UP]:
         #     self.block.rotate()
+        if self.rotationCounter <= 0 and (
+            pygame.key.get_pressed()[pygame.K_q] or pygame.key.get_pressed()[pygame.K_d]
+        ):
+            self.rotationCounter = 10
+            if pygame.key.get_pressed()[pygame.K_q]:
+                for i in self.block.allBlocks[(self.rotation - 1) % 4]:
+                    for j in i:
+                        if (
+                            j != None
+                            and j.rect.x >= 720
+                            and canTurnLeft
+                            and j.rect.x <= 1152
+                        ):
+                            if (
+                                self.game[(j.rect.y // 48) - 1][
+                                    (j.rect.x // 48) - 15 - 1
+                                ]
+                                != None
+                            ):
+                                canTurnLeft = False
+                        elif j != None:
+                            canTurnLeft = False
+                if canTurnLeft:
+                    for i in self.block.allBlocks[(self.rotation - 1) % 4]:
+                        for j in i:
+                            if (
+                                j != None
+                                and j.rect.x <= 1152
+                                and canTurnLeft
+                                and j.rect.x >= 720
+                            ):
+                                if ((j.rect.x // 48) - 15 + 1) < 9:
+                                    if (
+                                        self.game[(j.rect.y // 48) - 1][
+                                            (j.rect.x // 48) - 15 + 1
+                                        ]
+                                        != None
+                                    ):
+                                        canTurnLeft = False
+                            elif j != None:
+                                canTurnLeft = False
+                    self.rotation -= 1
+
+            if pygame.key.get_pressed()[pygame.K_d]:
+                for i in self.block.allBlocks[(self.rotation + 1) % 4]:
+                    for j in i:
+                        if (
+                            j != None
+                            and j.rect.x >= 720
+                            and canTurnRight
+                            and j.rect.x <= 1152
+                        ):
+                            if (
+                                self.game[(j.rect.y // 48) - 1][
+                                    (j.rect.x // 48) - 15 - 1
+                                ]
+                                != None
+                            ):
+                                canTurnRight = False
+                        elif j != None:
+                            canTurnRight = False
+                if canTurnRight:
+                    for i in self.block.allBlocks[(self.rotation + 1) % 4]:
+                        for j in i:
+                            if (
+                                j != None
+                                and j.rect.x <= 1152
+                                and canTurnRight
+                                and j.rect.x >= 720
+                            ):
+                                if ((j.rect.x // 48) - 15 + 1) < 9:
+                                    if (
+                                        self.game[(j.rect.y // 48) - 1][
+                                            (j.rect.x // 48) - 15 + 1
+                                        ]
+                                        != None
+                                    ):
+                                        canTurnRight = False
+                            elif j != None:
+                                canTurnRight = False
+                    self.rotation += 1
 
     def drawBackgroundImages(self):
         self.screen.blit(self.background, (0, 0))
@@ -125,7 +234,7 @@ class Game:
         self.screen.blit(self.nextImage, (1210, 50))
 
     def drawBlock(self):
-        for i in self.block.blocks:
+        for i in self.block.allBlocks[self.rotation % 4]:
             for j in i:
                 if j != None:
                     self.screen.blit(j.image, (j.rect.x, j.rect.y))
@@ -137,18 +246,18 @@ class Game:
                     self.screen.blit(j.image, (j.rect.x, j.rect.y))
 
     def addBlockToGame(self):
-        for i in self.block.blocks:
+        for i in self.block.allBlocks[self.rotation % 4]:
             for j in i:
                 if j != None:
                     self.game[(j.rect.y // 48) - 1][(j.rect.x // 48) - 15] = j
                     self.onBottom = False
 
     def stopBottom(self):
-        max = [20 for i in range(len(self.block.blocks[0]))]
+        max = [20 for i in range(len(self.block.allBlocks[self.rotation % 4][0]))]
         self.onBottom = True
         self.blockOnScreen = False
         self.addBlockToGame()
-        for j in self.block.blocks:
+        for j in self.block.allBlocks[self.rotation % 4]:
             counter = 0
             for k in j:
                 if k != None and k.rect.y // 48 - 1 < max[counter]:
@@ -157,7 +266,7 @@ class Game:
                 counter += 1
 
     def touchBottom(self):
-        for i in self.block.blocks[-1]:
+        for i in self.block.allBlocks[self.rotation % 4][-1]:
             if i != None and i.rect.y < 972:
                 if self.game[(i.rect.y // 48)][(i.rect.x // 48) - 15] != None:
                     self.stopBottom()
@@ -184,19 +293,24 @@ class Game:
                     run = False
 
             if self.speed <= 0 and not self.onBottom:
-                self.speed = self.clock.get_fps()
-                for i in self.block.blocks:
-                    for j in i:
-                        if j != None:
-                            j.rect.y += 48
+                self.speed = 40
+                for k in self.block.allBlocks:
+                    for i in k:
+                        for j in i:
+                            if j != None:
+                                j.rect.y += 48
+                self.input()
+                self.touchBottom()
             else:
                 self.speed -= 1
 
             self.refreshScreen()
-            self.touchBottom()
 
             if self.blockOnScreen == False:
                 self.createBlock()
+
+            self.rotationCounter -= 1
+            self.movingCounter -= 1
 
             self.clock.tick(60)
 
