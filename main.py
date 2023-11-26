@@ -227,6 +227,22 @@ class Game:
                                 canTurnRight = False
                     self.rotation += 1
 
+    def deleteLine(self):
+        for i in range(len(self.game)):
+            deleteLine = True
+            for j in self.game[i]:
+                if j == None:
+                    deleteLine = False
+            if deleteLine:
+                for k in range(i, 0, -1):
+                    for l in range(len(self.game[k])):
+                        if self.game[k][l] != None:
+                            self.game[k][l].rect.y += 48
+                        self.game[k][l] = self.game[k - 1][l]
+        self.drawGame()
+        pygame.display.flip()
+        pygame.display.update()
+
     def drawBackgroundImages(self):
         self.screen.blit(self.background, (0, 0))
         self.screen.blit(self.gameFiled, (520, 0))
@@ -305,6 +321,7 @@ class Game:
                 self.speed -= 1
 
             self.refreshScreen()
+            self.deleteLine()
 
             if self.blockOnScreen == False:
                 self.createBlock()

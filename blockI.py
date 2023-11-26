@@ -23,19 +23,10 @@ class BlockI(pygame.sprite.Sprite):
 
         self.blocks2 = [
             [
-                None,
-            ],
-            [
                 BasicBlock(x, y + 48, color),
                 BasicBlock(x + 48, y + 48, color),
                 BasicBlock(x + 96, y + 48, color),
                 BasicBlock(x + 144, y + 48, color),
-            ],
-            [
-                None,
-            ],
-            [
-                None,
             ],
         ]
 
@@ -56,17 +47,10 @@ class BlockI(pygame.sprite.Sprite):
 
         self.blocks4 = [
             [
-                None,
-            ],
-            [None],
-            [
                 BasicBlock(x, y + 96, color),
                 BasicBlock(x + 48, y + 96, color),
                 BasicBlock(x + 96, y + 96, color),
                 BasicBlock(x + 144, y + 96, color),
-            ],
-            [
-                None,
             ],
         ]
 
