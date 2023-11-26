@@ -47,13 +47,36 @@ class Game:
         self.soundSoftDrop = pygame.mixer.Sound("./sound/05 - SE_GAME_SOFTDROP.wav")
         self.soundLanding = pygame.mixer.Sound("./sound/07 - SE_GAME_LANDING.wav")
         self.soundSingleLine = pygame.mixer.Sound("./sound/09 - SE_GAME_SINGLE.wav")
+        self.soundDoubleLine = pygame.mixer.Sound("./sound/10 - SE_GAME_DOUBLE.wav")
+        self.soundTripleLine = pygame.mixer.Sound("./sound/11 - SE_GAME_TRIPLE.wav")
+        self.soundTetris = pygame.mixer.Sound("./sound/12 - SE_GAME_TETRIS.wav")
 
-        self.level = 0
+        self.level = 1
+        self.score = 0
+        self.combo = 0
+        self.comboDico = {
+            0: 0,
+            1: 1,
+            2: 1,
+            3: 2,
+            4: 2,
+            5: 3,
+            6: 3,
+            7: 4,
+            8: 4,
+            9: 4,
+            10: 5,
+            11: 5,
+            12: 5,
+            13: 5,
+        }
+        self.inCombo = False
         self.clock = pygame.time.Clock()
         self.speed = 30
         self.rotation = 0
         self.rotationCounter = 15
         self.movingCounter = 2
+        self.nuberOfLine = 0
 
         self.game = [[None for j in range(10)] for i in range(20)]
 
@@ -71,6 +94,8 @@ class Game:
         self.bottomLimit = [20 for i in range(10)]
         self.onBottom = False
 
+        self.font = pygame.font.SysFont("Arial", 30)
+
         self.nextBlock = []
         for i in range(3):
             self.blockPossibilities = [
@@ -84,11 +109,33 @@ class Game:
             ]
             self.nextBlock.append(random.choice(self.blockPossibilities))
 
-    def drawNextBlock(self):
+        self.holdBlock = None
+
+    def doHoldBlock(self):
+        if self.holdBlock == None:
+            self.holdBlock = self.block
+            self.createBlock()
+        else:
+            self.holdBlock, self.block = self.block, self.holdBlock
+            self.rotation = 0
+            countery = 0
+            for i in self.block.allBlocks[self.rotation % 4]:
+                counterx = 0
+                for j in i:
+                    if j != None:
+                        j.rect.x = 912 + (counterx * 48)
+                        j.rect.y = 60 + (countery * 48)
+                    counterx += 1
+                countery += 1
+
+    def drawNextReserveBlock(self):
         for i in range(len(self.nextBlock)):
             self.screen.blit(
                 self.dicoBlockImage[self.nextBlock[i].name], (1210, 84 + (180 * i))
             )
+
+        if self.holdBlock != None:
+            self.screen.blit(self.dicoBlockImage[self.holdBlock.name], (582, 84))
 
     def createBlock(self):
         self.blockPossibilities = [
@@ -108,6 +155,8 @@ class Game:
         )
         self.blockOnScreen = True
         self.speed = self.clock.get_fps()
+        if self.nuberOfLine == 0:
+            self.combo = 0
 
     def input(self):
         keys = pygame.key.get_pressed()
@@ -120,7 +169,6 @@ class Game:
         canGoDown = True
 
         if self.movingCounter <= 0 and (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
-            pygame.mixer.Sound.play(self.soundMove)
             self.movingCounter = 0
             if keys[pygame.K_LEFT]:
                 for i in self.block.allBlocks[self.rotation % 4]:
@@ -138,6 +186,7 @@ class Game:
                             canLeft = False
                             self.movingCounter = 0
                 if canLeft:
+                    pygame.mixer.Sound.play(self.soundMove)
                     for k in self.block.allBlocks:
                         for i in k:
                             for j in i:
@@ -160,6 +209,7 @@ class Game:
                             canRight = False
                             self.movingCounter = 0
                 if canRight:
+                    pygame.mixer.Sound.play(self.soundMove)
                     for k in self.block.allBlocks:
                         for i in k:
                             for j in i:
@@ -167,24 +217,26 @@ class Game:
                                     j.rect.x += 48
 
         if keys[pygame.K_DOWN]:
-            pygame.mixer.Sound.play(self.soundSoftDrop)
-            for i in self.block.allBlocks[self.rotation % 4][-1]:
-                if i != None and i.rect.y < 972:
-                    if self.game[(i.rect.y // 48)][(i.rect.x // 48) - 15] != None:
+            for k in self.block.allBlocks[self.rotation % 4]:
+                for i in k:
+                    if i != None and i.rect.y < 972:
+                        if self.game[(i.rect.y // 48)][(i.rect.x // 48) - 15] != None:
+                            canGoDown = False
+                            break
+                    elif i != None:
                         canGoDown = False
                         break
-                elif i != None:
-                    canGoDown = False
-                    break
             if canGoDown:
                 self.speed -= 50
+                pygame.mixer.Sound.play(self.soundSoftDrop)
+                self.score += 1
 
-        # if keys[pygame.K_UP]:
-        #     self.block.rotate()
+        if keys[pygame.K_a]:
+            self.doHoldBlock()
+
         if self.rotationCounter <= 0 and (
             pygame.key.get_pressed()[pygame.K_q] or pygame.key.get_pressed()[pygame.K_d]
         ):
-            pygame.mixer.Sound.play(self.soundRotate)
             self.rotationCounter = 10
             if pygame.key.get_pressed()[pygame.K_q]:
                 for i in self.block.allBlocks[(self.rotation - 1) % 4]:
@@ -224,6 +276,7 @@ class Game:
                             elif j != None:
                                 canTurnLeft = False
                     self.rotation -= 1
+                    pygame.mixer.Sound.play(self.soundRotate)
 
             if pygame.key.get_pressed()[pygame.K_d]:
                 for i in self.block.allBlocks[(self.rotation + 1) % 4]:
@@ -263,20 +316,42 @@ class Game:
                             elif j != None:
                                 canTurnRight = False
                     self.rotation += 1
+                    pygame.mixer.Sound.play(self.soundRotate)
 
     def deleteLine(self):
+        self.nuberOfLine = 0
         for i in range(len(self.game)):
             deleteLine = True
             for j in self.game[i]:
                 if j == None:
                     deleteLine = False
             if deleteLine:
-                pygame.mixer.Sound.play(self.soundSingleLine)
+                self.nuberOfLine += 1
                 for k in range(i, 0, -1):
                     for l in range(len(self.game[k])):
                         if self.game[k][l] != None:
                             self.game[k][l].rect.y += 48
                         self.game[k][l] = self.game[k - 1][l]
+        if self.nuberOfLine == 1:
+            pygame.mixer.Sound.play(self.soundSingleLine)
+            self.score += 100 * self.level
+            self.score += self.comboDico[self.combo]
+            self.combo += 1
+        elif self.nuberOfLine == 2:
+            pygame.mixer.Sound.play(self.soundDoubleLine)
+            self.score += 300 * self.level
+            self.score += self.comboDico[self.combo]
+            self.combo += 1
+        elif self.nuberOfLine == 3:
+            pygame.mixer.Sound.play(self.soundTripleLine)
+            self.score += 500 * self.level
+            self.score += self.comboDico[self.combo]
+            self.combo += 1
+        elif self.nuberOfLine == 4:
+            pygame.mixer.Sound.play(self.soundTetris)
+            self.score += 800 * self.level
+            self.score += self.comboDico[self.combo]
+            self.combo += 1
 
     def drawBackgroundImages(self):
         self.screen.blit(self.background, (0, 0))
@@ -317,20 +392,29 @@ class Game:
                 counter += 1
 
     def touchBottom(self):
-        for i in self.block.allBlocks[self.rotation % 4][-1]:
-            if i != None and i.rect.y < 972:
-                if self.game[(i.rect.y // 48)][(i.rect.x // 48) - 15] != None:
+        for k in self.block.allBlocks[self.rotation % 4]:
+            for i in k:
+                if i != None and i.rect.y < 972:
+                    if self.game[(i.rect.y // 48)][(i.rect.x // 48) - 15] != None:
+                        self.stopBottom()
+                        break
+                elif i != None:
                     self.stopBottom()
                     break
-            elif i != None:
-                self.stopBottom()
-                break
 
     def refreshScreen(self):
         self.drawBackgroundImages()
         self.drawBlock()
         self.drawGame()
-        self.drawNextBlock()
+        self.drawNextReserveBlock()
+
+        self.screen.blit(
+            self.font.render(f"Score: {self.score}", False, (255, 255, 255)), (50, 50)
+        )
+
+        self.screen.blit(
+            self.font.render(f"Score: {self.combo}", False, (255, 255, 255)), (50, 300)
+        )
 
         pygame.display.flip()
         pygame.display.update()

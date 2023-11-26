@@ -9,7 +9,7 @@ class BlockLMiror(pygame.sprite.Sprite):
         self.name = "LMiror"
 
         self.blocks1 = [
-            [None, None, BasicBlock(x + 96, y, color)],
+            [BasicBlock(x, y, color), None, None],
             [
                 BasicBlock(x, y + 48, color),
                 BasicBlock(x + 48, y + 48, color),
@@ -18,15 +18,12 @@ class BlockLMiror(pygame.sprite.Sprite):
         ]
 
         self.blocks2 = [
-            [BasicBlock(x, y, color), None],
+            [BasicBlock(x, y, color), BasicBlock(x + 48, y, color)],
             [
                 BasicBlock(x, y + 48, color),
                 None,
             ],
-            [
-                BasicBlock(x, y + 96, color),
-                BasicBlock(x + 48, y + 96, color),
-            ],
+            [BasicBlock(x, y + 96, color), None],
         ]
 
         self.blocks3 = [
@@ -36,20 +33,20 @@ class BlockLMiror(pygame.sprite.Sprite):
                 BasicBlock(x + 96, y, color),
             ],
             [
-                BasicBlock(x, y + 48, color),
                 None,
                 None,
+                BasicBlock(x + 96, y + 48, color),
             ],
         ]
 
         self.blocks4 = [
-            [BasicBlock(x, y, color), BasicBlock(x + 48, y, color)],
+            [None, BasicBlock(x + 48, y, color)],
             [
                 None,
                 BasicBlock(x + 48, y + 48, color),
             ],
             [
-                None,
+                BasicBlock(x, y + 96, color),
                 BasicBlock(x + 48, y + 96, color),
             ],
         ]
