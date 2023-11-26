@@ -20,6 +20,34 @@ class Game:
         self.holdImage = pygame.image.load("./img/game_field_hold^q.png")
         self.nextImage = pygame.image.load("./img/game_field_next^q.png")
 
+        self.blockINextReserve = pygame.image.load("./img/Next Reserve/BlockI.png")
+        self.blockLNextReserve = pygame.image.load("./img/Next Reserve/BlockL.png")
+        self.blockLMirorNextReserve = pygame.image.load(
+            "./img/Next Reserve/BlockLMiror.png"
+        )
+        self.blockONextReserve = pygame.image.load("./img/Next Reserve/BlockO.png")
+        self.blockSNextReserve = pygame.image.load("./img/Next Reserve/BlockS.png")
+        self.blockZNextReserve = pygame.image.load("./img/Next Reserve/BlockZ.png")
+        self.blockTNextReserve = pygame.image.load("./img/Next Reserve/BlockT.png")
+
+        self.dicoBlockImage = {
+            "I": self.blockINextReserve,
+            "L": self.blockLNextReserve,
+            "LMiror": self.blockLMirorNextReserve,
+            "O": self.blockONextReserve,
+            "S": self.blockSNextReserve,
+            "Z": self.blockZNextReserve,
+            "T": self.blockTNextReserve,
+        }
+
+        self.musicTheme = pygame.mixer.music.load("./music/Tetris 99 - Main Theme.mp3")
+
+        self.soundMove = pygame.mixer.Sound("./sound/03 - SE_GAME_MOVE.wav")
+        self.soundRotate = pygame.mixer.Sound("./sound/04 - SE_GAME_ROTATE.wav")
+        self.soundSoftDrop = pygame.mixer.Sound("./sound/05 - SE_GAME_SOFTDROP.wav")
+        self.soundLanding = pygame.mixer.Sound("./sound/07 - SE_GAME_LANDING.wav")
+        self.soundSingleLine = pygame.mixer.Sound("./sound/09 - SE_GAME_SINGLE.wav")
+
         self.level = 0
         self.clock = pygame.time.Clock()
         self.speed = 30
@@ -56,6 +84,12 @@ class Game:
             ]
             self.nextBlock.append(random.choice(self.blockPossibilities))
 
+    def drawNextBlock(self):
+        for i in range(len(self.nextBlock)):
+            self.screen.blit(
+                self.dicoBlockImage[self.nextBlock[i].name], (1210, 84 + (180 * i))
+            )
+
     def createBlock(self):
         self.blockPossibilities = [
             BlockLMiror(912, 60, "red"),
@@ -86,6 +120,7 @@ class Game:
         canGoDown = True
 
         if self.movingCounter <= 0 and (keys[pygame.K_LEFT] or keys[pygame.K_RIGHT]):
+            pygame.mixer.Sound.play(self.soundMove)
             self.movingCounter = 0
             if keys[pygame.K_LEFT]:
                 for i in self.block.allBlocks[self.rotation % 4]:
@@ -132,6 +167,7 @@ class Game:
                                     j.rect.x += 48
 
         if keys[pygame.K_DOWN]:
+            pygame.mixer.Sound.play(self.soundSoftDrop)
             for i in self.block.allBlocks[self.rotation % 4][-1]:
                 if i != None and i.rect.y < 972:
                     if self.game[(i.rect.y // 48)][(i.rect.x // 48) - 15] != None:
@@ -148,6 +184,7 @@ class Game:
         if self.rotationCounter <= 0 and (
             pygame.key.get_pressed()[pygame.K_q] or pygame.key.get_pressed()[pygame.K_d]
         ):
+            pygame.mixer.Sound.play(self.soundRotate)
             self.rotationCounter = 10
             if pygame.key.get_pressed()[pygame.K_q]:
                 for i in self.block.allBlocks[(self.rotation - 1) % 4]:
@@ -234,14 +271,12 @@ class Game:
                 if j == None:
                     deleteLine = False
             if deleteLine:
+                pygame.mixer.Sound.play(self.soundSingleLine)
                 for k in range(i, 0, -1):
                     for l in range(len(self.game[k])):
                         if self.game[k][l] != None:
                             self.game[k][l].rect.y += 48
                         self.game[k][l] = self.game[k - 1][l]
-        self.drawGame()
-        pygame.display.flip()
-        pygame.display.update()
 
     def drawBackgroundImages(self):
         self.screen.blit(self.background, (0, 0))
@@ -292,17 +327,17 @@ class Game:
                 break
 
     def refreshScreen(self):
-        self.input()
         self.drawBackgroundImages()
         self.drawBlock()
         self.drawGame()
+        self.drawNextBlock()
 
         pygame.display.flip()
         pygame.display.update()
 
     def run(self):
         run = True
-
+        pygame.mixer.music.play(-1)
         while run:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -319,6 +354,8 @@ class Game:
                 self.touchBottom()
             else:
                 self.speed -= 1
+
+            self.input()
 
             self.refreshScreen()
             self.deleteLine()

@@ -6,6 +6,8 @@ class BlockI(pygame.sprite.Sprite):
     def __init__(self, x, y, color):
         super().__init__()
 
+        self.name = "I"
+
         self.blocks1 = [
             [
                 BasicBlock(x, y, color),
